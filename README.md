@@ -54,6 +54,13 @@ Open <http://127.0.0.1:5173>. Vite proxies `/api` requests to the Flask server o
 
 The chat responds in Spanish. The interface and application instructions are in English.
 
+## Knowledge libraries
+
+- `libraries/ai_characteristics` is reserved for Ainy's identity, traits, and prompt guidance.
+- `libraries/mission_context` is reserved for crew and mission context.
+
+These libraries are placeholders and are not loaded by the application yet.
+
 ## TTS
 
-Use **Generate speech** below a response, then play the generated audio with the audio controls. Speech generation runs locally after the Qwen3-TTS model has been downloaded.
+The backend TTS endpoint and local Qwen3-TTS engine remain available. Frontend speech controls are temporarily removed until automatic speech generation is implemented.

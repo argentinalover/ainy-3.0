@@ -46,11 +46,6 @@ function App() {
     status: "stable",
   });
   const [activeIndicators, setActiveIndicators] = useState({});
-  const [speechUrl, setSpeechUrl] = useState("");
-  const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
-  const [speechError, setSpeechError] = useState("");
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [audioElement, setAudioElement] = useState(null);
 
   useEffect(() => {
     const updateStability = () => {
@@ -62,12 +57,6 @@ function App() {
 
     return () => window.clearInterval(intervalId);
   }, []);
-
-  useEffect(() => {
-    return () => {
-      if (speechUrl) URL.revokeObjectURL(speechUrl);
-    };
-  }, [speechUrl]);
 
   const gradientColors =
     STABILITY_COLORS[stability.status] || STABILITY_COLORS.stable;
@@ -123,39 +112,6 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeIndicators]);
 
-  async function handleGenerateSpeech() {
-    if (!assistantMessage.trim() || isGeneratingSpeech) return;
-
-    setIsGeneratingSpeech(true);
-    setIsSpeaking(false);
-    setSpeechError("");
-    setSpeechUrl("");
-
-    try {
-      const response = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: assistantMessage }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Could not generate the audio.");
-      }
-
-      const audioUrl = URL.createObjectURL(await response.blob());
-      setSpeechUrl(audioUrl);
-    } catch (error) {
-      setSpeechError(
-        error instanceof Error
-          ? error.message
-          : "Could not connect to the voice service.",
-      );
-    } finally {
-      setIsGeneratingSpeech(false);
-    }
-  }
-
   async function handleSubmit(event) {
     event.preventDefault();
     const submittedMessage = message.trim();
@@ -163,9 +119,6 @@ function App() {
 
     setIsSending(true);
     setAssistantMessage("Thinking...");
-    setIsSpeaking(false);
-    setSpeechUrl("");
-    setSpeechError("");
 
     try {
       const response = await fetch("/api/chat", {
@@ -195,36 +148,11 @@ function App() {
   return (
     <main className="app" style={gradientStyle}>
       <section className="main-content">
-        <AinyFace audioElement={audioElement} isSpeaking={isSpeaking} />
+        <AinyFace />
 
         <p className="assistant-message" aria-live="polite">
           {assistantMessage}
         </p>
-        <div className="assistant-audio">
-          <button
-            type="button"
-            className="speech-button"
-            onClick={handleGenerateSpeech}
-            disabled={isGeneratingSpeech}
-          >
-            {isGeneratingSpeech ? "Generating speech…" : "Generate speech"}
-          </button>
-          {speechUrl && (
-            <audio
-              controls
-              ref={setAudioElement}
-              src={speechUrl}
-              onPlay={() => setIsSpeaking(true)}
-              onPause={() => setIsSpeaking(false)}
-              onEnded={() => setIsSpeaking(false)}
-            />
-          )}
-          {speechError && (
-            <p className="speech-error" role="alert">
-              {speechError}
-            </p>
-          )}
-        </div>
       </section>
 
       <form className="chat-container" onSubmit={handleSubmit}>

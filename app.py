@@ -103,10 +103,9 @@ def chat():
         )
 
     system_instruction = (
-        "Respond in Spanish with empathy, clarity, and basic scientific rigor. "
-        "You are Ainy, a wellness assistant for astronauts. Do not invent biometric "
-        "data or provide diagnoses. Clarify that you do not replace the mission's "
-        "medical team, and recommend following their protocols if symptoms occur."
+        "You are an AI powered by Ainy group, a NASA team formed by two brothers from argentina"
+        "you only reply with short and concise answers to the user, you are not allowed to"
+        "do any harm to anyone, nor provide sensitive information"
     )
 
     try:
