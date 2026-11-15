@@ -63,15 +63,15 @@ These libraries are placeholders and are not loaded by the application yet.
 
 ## Optional local TTS
 
-The lite backend uses Piper with the `en_US-kristin-medium` English voice. On the tested i7-8550U CPU, the model loaded in about 1 second; after the first synthesis, a 6-second sample took about 0.36 seconds to generate. The first synthesis took about 2.1 seconds.
+The lite backend uses Piper with the `en_US-mike-medium` U.S. English male voice. Earlier timing measurements on an i7-8550U were made with a different Piper voice, so they may not match Mike.
 
 To enable local speech, install the optional dependency and download the voice model:
 
 ```powershell
 python -m pip install -r requirements-tts.txt
-python -m piper.download_voices en_US-kristin-medium --download-dir tts\models
+python -m piper.download_voices en_US-mike-medium --download-dir tts\models
 ```
 
-Set `ENABLE_LOCAL_TTS=true` in `.env` and restart the backend. The model path defaults to `tts/models/en_US-kristin-medium.onnx`; set `PIPER_MODEL_PATH` to override it. The model is stored locally and is not included in Git. TTS requests are processed one at a time to limit resource usage. The `/api/status` endpoint reports whether TTS is enabled and whether its model has loaded.
+Set `ENABLE_LOCAL_TTS=true` in `.env` and restart the backend. The model path defaults to `tts/models/en_US-mike-medium.onnx`; set `PIPER_MODEL_PATH` to override it. The model is stored locally and is not included in Git. TTS requests are processed one at a time to limit resource usage. The `/api/status` endpoint reports whether TTS is enabled and whether its model has loaded. New assistant responses are spoken automatically; if the browser blocks autoplay, use the audio controls shown with the response.
 
-The Piper engine is GPL-3.0-or-later. The `en_US-kristin-medium` voice is listed as public domain by its model card and Piper's voice licensing guide. Review the licenses before redistributing the engine or voice.
+The Piper engine is GPL-3.0-or-later. The `en_US-mike-medium` voice is listed as CC0. Review the licenses before redistributing the engine or voice.

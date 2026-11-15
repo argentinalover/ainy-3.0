@@ -51,12 +51,33 @@ function App() {
     status: "stable",
   });
   const speechRequestRef = useRef(null);
+  const autoplaySpeechRef = useRef(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (!speechUrl) return undefined;
     return () => URL.revokeObjectURL(speechUrl);
   }, [speechUrl]);
+
+  useEffect(() => {
+    if (!speechUrl || !audioElement || !autoplaySpeechRef.current) {
+      return undefined;
+    }
+
+    autoplaySpeechRef.current = false;
+    let active = true;
+    audioElement.play().catch((error) => {
+      if (active && error.name !== "AbortError") {
+        setSpeechError(
+          "Automatic playback was blocked. Use the audio controls to play this response.",
+        );
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [audioElement, speechUrl]);
 
   useEffect(() => {
     return () => speechRequestRef.current?.abort();
@@ -149,6 +170,7 @@ function App() {
 
     speechRequestRef.current?.abort();
     speechRequestRef.current = null;
+    autoplaySpeechRef.current = false;
     setSpeechLoadingId(null);
     audioElement?.pause();
     setSpeechUrl("");
@@ -173,10 +195,11 @@ function App() {
       if (typeof data.response !== "string" || !data.response.trim()) {
         throw new Error("The backend returned an empty response.");
       }
-      setMessages((current) => [
-        ...current,
-        createMessage("assistant", data.response.trim()),
-      ]);
+      const assistantMessage = createMessage("assistant", data.response.trim());
+      setMessages((current) => [...current, assistantMessage]);
+      if (status?.tts_enabled) {
+        void handleSpeak(assistantMessage, true);
+      }
     } catch (error) {
       setChatError(
         error instanceof Error ? error.message : "Could not connect to Ainy.",
@@ -186,10 +209,11 @@ function App() {
     }
   }
 
-  async function handleSpeak(messageItem) {
+  async function handleSpeak(messageItem, autoplay = false) {
     speechRequestRef.current?.abort();
     const controller = new AbortController();
     speechRequestRef.current = controller;
+    autoplaySpeechRef.current = autoplay;
     setSpeechLoadingId(messageItem.id);
     setSpeechError("");
     setSpeechUrl("");
@@ -208,6 +232,7 @@ function App() {
       }
 
       const audioBlob = await response.blob();
+      if (controller.signal.aborted) return;
       if (!audioBlob.size) {
         throw new Error("The voice service returned empty audio.");
       }
@@ -305,7 +330,7 @@ function App() {
                   <audio
                     ref={setAudioElement}
                     controls
-                    preload="none"
+                    preload="auto"
                     src={speechUrl}
                     onPlay={() => setIsSpeaking(true)}
                     onPause={() => setIsSpeaking(false)}

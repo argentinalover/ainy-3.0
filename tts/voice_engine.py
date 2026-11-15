@@ -6,7 +6,7 @@ from pathlib import Path
 from piper import PiperVoice
 from piper.config import SynthesisConfig
 
-DEFAULT_MODEL_PATH = Path(__file__).parent / "models" / "en_US-kristin-medium.onnx"
+DEFAULT_MODEL_PATH = Path(__file__).parent / "models" / "en_US-mike-medium.onnx"
 DEFAULT_LENGTH_SCALE = 1.08
 
 
@@ -16,7 +16,7 @@ class VoiceEngine:
         if not model_path.is_file():
             raise FileNotFoundError(
                 f"Piper voice model not found at {model_path}. "
-                "Download en_US-kristin-medium with the setup instructions."
+                "Download en_US-mike-medium with the setup instructions."
             )
 
         self.voice = PiperVoice.load(model_path)
