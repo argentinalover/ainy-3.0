@@ -164,6 +164,10 @@ body,
   left: 4.4444%;
   width: 48.3333%;
   height: 80%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(10px, 1.2vw, 18px);
+  padding: clamp(12px, 1.8vw, 24px);
   border: 1px solid rgba(230, 230, 230, 0.1);
   border-radius: clamp(28px, 3.5vw, 48px);
   background: rgba(12, 12, 12, 0.76);
@@ -178,6 +182,271 @@ body,
 .design-stage--console .console-panel {
   opacity: 1;
   transform: translateX(0);
+}
+
+.console-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: clamp(8px, 1vw, 14px);
+  border-bottom: 1px solid rgba(230, 230, 230, 0.12);
+  color: rgba(235, 235, 235, 0.72);
+  font-size: clamp(8px, 0.9vw, 12px);
+  letter-spacing: 0.16em;
+}
+
+.console-heading h1 {
+  overflow: hidden;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.console-heading > span {
+  flex: 0 0 auto;
+  color: rgba(160, 223, 180, 0.72);
+  font-size: 0.76em;
+}
+
+.metric-grid {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: clamp(8px, 1vw, 14px);
+}
+
+.metric-card {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  padding: clamp(10px, 1.35vw, 18px);
+  border: 1px solid rgba(230, 230, 230, 0.1);
+  border-radius: clamp(16px, 2vw, 26px);
+  background: rgba(0, 0, 0, 0.22);
+  transition:
+    border-color 300ms ease,
+    background-color 300ms ease;
+}
+
+.metric-card--observation {
+  border-color: rgba(245, 158, 11, 0.38);
+  background: rgba(64, 42, 8, 0.2);
+}
+
+.metric-card--alert {
+  border-color: rgba(220, 38, 38, 0.5);
+  background: rgba(70, 18, 18, 0.24);
+}
+
+.metric-card__header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: rgba(245, 245, 245, 0.86);
+  font-size: clamp(10px, 1.05vw, 14px);
+}
+
+.metric-card__header > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric-card__status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  color: rgba(220, 220, 220, 0.52);
+  font-size: clamp(6px, 0.62vw, 8px);
+  letter-spacing: 0.08em;
+}
+
+.metric-card__status::before {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--metric-color);
+  content: "";
+}
+
+.metric-card--observation .metric-card__status {
+  color: #f59e0b;
+}
+
+.metric-card--observation .metric-card__status::before {
+  background-color: #f59e0b;
+}
+
+.metric-card--alert .metric-card__status {
+  color: #ef4444;
+}
+
+.metric-card--alert .metric-card__status::before {
+  background-color: #ef4444;
+}
+
+.metric-card__reading {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.95);
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-card__reading strong {
+  overflow: hidden;
+  font-size: clamp(22px, 2.45vw, 36px);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric-card__reading > span {
+  overflow: hidden;
+  color: rgba(220, 220, 220, 0.56);
+  font-size: clamp(8px, 0.82vw, 11px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.face-footer {
+  position: absolute;
+  z-index: 2;
+  top: 85%;
+  left: 59%;
+  display: grid;
+  width: 37%;
+  height: 13%;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 2%;
+}
+
+.face-footer-card {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  border: 1px solid rgba(230, 230, 230, 0.13);
+  border-radius: clamp(15px, 2vw, 26px);
+  background: rgba(12, 12, 12, 0.8);
+}
+
+.ai-status-card {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 0.8vw, 11px);
+  padding: clamp(7px, 1vw, 14px);
+}
+
+.ai-status-card__light {
+  width: clamp(6px, 0.7vw, 9px);
+  height: clamp(6px, 0.7vw, 9px);
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #75c997;
+  box-shadow: 0 0 10px rgba(117, 201, 151, 0.55);
+}
+
+.ai-status-card--speaking .ai-status-card__light {
+  animation: ai-status-pulse 900ms ease-in-out infinite alternate;
+}
+
+.ai-status-card__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-status-card__copy > span {
+  color: rgba(225, 225, 225, 0.54);
+  font-size: clamp(7px, 0.68vw, 9px);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.ai-status-card__copy strong {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(8px, 0.85vw, 11px);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.secondary-metric {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto 1fr;
+  gap: 3px 8px;
+  padding: clamp(7px, 1vw, 13px);
+  opacity: 0;
+  transition: opacity 850ms ease;
+}
+
+.secondary-metric--active {
+  opacity: 1;
+}
+
+.secondary-metric__label {
+  overflow: hidden;
+  grid-column: 1 / -1;
+  color: rgba(225, 225, 225, 0.6);
+  font-size: clamp(7px, 0.7vw, 9px);
+  letter-spacing: 0.1em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.secondary-metric__label::before {
+  color: rgba(225, 225, 225, 0.35);
+  content: "SIM / ";
+}
+
+.secondary-metric strong {
+  align-self: end;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: clamp(15px, 1.6vw, 22px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.secondary-metric__unit {
+  align-self: end;
+  padding-bottom: 2px;
+  color: rgba(220, 220, 220, 0.54);
+  font-size: clamp(7px, 0.68vw, 9px);
+  white-space: nowrap;
+}
+
+@keyframes ai-status-pulse {
+  from {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 
 .message-bar {
@@ -378,7 +647,10 @@ body,
   .app::after,
   .face-panel,
   .console-panel,
-  .message-bar {
+  .message-bar,
+  .ai-status-card__light,
+  .metric-card,
+  .secondary-metric {
     animation: none;
     transition: none;
   }

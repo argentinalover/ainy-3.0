@@ -13,8 +13,23 @@ import { simulateValues, setSimulationValue } from "../stability/simulation.js";
 import { VARIABLES } from "../stability/variables.js";
 import "./styles.css";
 
+const PRIMARY_METRICS = ["radiation", "cortisol", "sleep", "heartRate"];
+const SECONDARY_METRICS = ["microgravity", "muscleLoss"];
+const METRIC_STATUS_LABELS = {
+  stable: "NOMINAL",
+  observation: "OBSERVATION",
+  alert: "ALERT"
+};
+
 function isConsolePath() {
   return window.location.pathname.replace(/\/+$/, "") === "/page";
+}
+
+function formatMetricValue(key, value) {
+  if (key === "microgravity") return value.toExponential(2);
+  if (key === "heartRate") return Math.round(value).toString();
+  if (key === "sleep" || key === "muscleLoss") return value.toFixed(1);
+  return value.toFixed(2);
 }
 
 function App() {
@@ -25,6 +40,9 @@ function App() {
   const [error, setError] = useState("");
   const [lastResponse, setLastResponse] = useState("");
   const [activeAlert, setActiveAlert] = useState(null);
+  const [sensorValues, setSensorValues] = useState(() => simulateValues());
+  const [stabilityResult, setStabilityResult] = useState(null);
+  const [secondaryMetric, setSecondaryMetric] = useState("microgravity");
   const audioRef = useRef(null);
   const audioUrlRef = useRef("");
 
@@ -44,10 +62,38 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!isConsolePage) return undefined;
+
+    function updateSimulation() {
+      const values = simulateValues();
+      setSensorValues(values);
+      setStabilityResult(calculateStability(values));
+    }
+
+    updateSimulation();
+    const intervalId = window.setInterval(updateSimulation, 1200);
+    return () => window.clearInterval(intervalId);
+  }, [isConsolePage]);
+
+  useEffect(() => {
+    if (!isConsolePage) return undefined;
+
+    const intervalId = window.setInterval(() => {
+      setSecondaryMetric((currentMetric) =>
+        currentMetric === "microgravity" ? "muscleLoss" : "microgravity"
+      );
+    }, 5000);
+    return () => window.clearInterval(intervalId);
+  }, [isConsolePage]);
+
+  useEffect(() => {
     function clearActiveAlert() {
       if (activeAlert) {
         setSimulationValue(activeAlert, VARIABLES[activeAlert].value);
         resetStabilityHistory(activeAlert);
+        const values = simulateValues();
+        setSensorValues(values);
+        setStabilityResult(calculateStability(values));
       }
       setActiveAlert(null);
     }
@@ -94,7 +140,10 @@ function App() {
       resetStabilityHistory(metric);
       setSimulationValue(metric, SIMULATED_ALERT_VALUES[metric]);
 
-      const result = calculateStability(simulateValues());
+      const values = simulateValues();
+      const result = calculateStability(values);
+      setSensorValues(values);
+      setStabilityResult(result);
       if (result.variables[metric].status !== "stable") {
         setActiveAlert(metric);
       }
@@ -186,6 +235,7 @@ function App() {
   const alertClass = activeAlert
     ? ` app--alert-${activeAlert === "heartRate" ? "heart-rate" : activeAlert}`
     : "";
+  const aiStatus = isSending ? "PROCESSING" : isSpeaking ? "SPEAKING" : "ONLINE";
 
   return (
     <main className={`app${alertClass}`}>
@@ -202,9 +252,41 @@ function App() {
       >
         <section
           className="console-panel"
-          aria-label="Biometric data console, design in progress"
+          aria-label="Simulated biometric data console"
           aria-hidden={!isConsolePage}
-        />
+        >
+          <header className="console-heading">
+            <h1>BIOMETRIC MONITOR</h1>
+            <span>SIMULATION ACTIVE</span>
+          </header>
+          <div className="metric-grid">
+            {PRIMARY_METRICS.map((metricKey) => {
+              const variable = VARIABLES[metricKey];
+              const metricResult = stabilityResult?.variables[metricKey];
+              const metricStatus = metricResult?.status ?? "stable";
+              const metricValue = sensorValues[metricKey] ?? variable.value;
+
+              return (
+                <article
+                  className={`metric-card metric-card--${metricStatus}`}
+                  key={metricKey}
+                  style={{ "--metric-color": variable.indicatorColor }}
+                >
+                  <div className="metric-card__header">
+                    <span>{variable.name}</span>
+                    <span className="metric-card__status">
+                      {METRIC_STATUS_LABELS[metricStatus]}
+                    </span>
+                  </div>
+                  <div className="metric-card__reading">
+                    <strong>{formatMetricValue(metricKey, metricValue)}</strong>
+                    <span>{variable.unit}</span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
         <button
           className={`face-panel ${
             isConsolePage ? "face-panel--console" : "face-panel--home"
@@ -219,6 +301,48 @@ function App() {
             <img className="face-eye face-eye--right" src={eyesImage} alt="" />
           </div>
         </button>
+        {isConsolePage && (
+          <div className="face-footer">
+            <section
+              className={`face-footer-card ai-status-card ${
+                isSpeaking ? "ai-status-card--speaking" : ""
+              }`}
+              aria-label={`LEO AI ${aiStatus.toLowerCase()}`}
+            >
+              <span className="ai-status-card__light" />
+              <span className="ai-status-card__copy">
+                <span>LEO AI</span>
+                <strong>{aiStatus}</strong>
+              </span>
+            </section>
+            <section
+              className="face-footer-card secondary-metric-card"
+              aria-label="Simulated secondary biometric"
+            >
+              {SECONDARY_METRICS.map((metricKey) => {
+                const variable = VARIABLES[metricKey];
+                const isActive = secondaryMetric === metricKey;
+                const metricValue = sensorValues[metricKey] ?? variable.value;
+
+                return (
+                  <div
+                    className={`secondary-metric ${
+                      isActive ? "secondary-metric--active" : ""
+                    }`}
+                    key={metricKey}
+                    aria-hidden={!isActive}
+                  >
+                    <span className="secondary-metric__label">
+                      {variable.name}
+                    </span>
+                    <strong>{formatMetricValue(metricKey, metricValue)}</strong>
+                    <span className="secondary-metric__unit">{variable.unit}</span>
+                  </div>
+                );
+              })}
+            </section>
+          </div>
+        )}
         <form
           className={`message-bar ${
             isConsolePage ? "message-bar--hidden" : ""

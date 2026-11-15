@@ -51,7 +51,7 @@ npm run dev
 
 Open <http://127.0.0.1:5173>. Vite proxies `/api` requests to the Flask server on port 5000.
 
-The frontend follows the current Figma canvas over the animated gradient wallpaper. The home page uses the supplied eyes on a dark rounded panel, with a TTS-reactive line connecting them, centered subtitles shown only during speech, and a working chat bar. NASA and LEO marks sit unobtrusively in the upper corners. Clicking the face transitions to `/page`, where it moves to the right of a more opaque console panel.
+The frontend follows the current Figma canvas over the animated gradient wallpaper. The home page uses the supplied eyes on a dark rounded panel, with a TTS-reactive line connecting them, centered subtitles shown only during speech, and a working chat bar. NASA and LEO marks sit unobtrusively in the upper corners. Clicking the face transitions to `/page`, where it moves to the right of a more opaque console panel. The console displays simulated radiation, cortisol, sleep, and heart-rate readings; a small card below LEO alternates between microgravity and muscle-loss readings.
 
 The gradient can preview simulated biometric alerts without adding controls to the interface: press `1` for radiation, `2` for cortisol, `3` for sleep, or `4` for heart rate. Press the same key again or `Escape` to clear the alert. These are demo values, not live sensor readings or medical guidance.
 Gemini requests time out after 30 seconds, and generated responses are capped at 512 tokens.
