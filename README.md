@@ -1,6 +1,6 @@
 # Ainy
 
-Ainy is an astronaut wellness assistant with a React interface, a Gemini-powered chat endpoint, and optional local Piper text-to-speech.
+Ainy is an astronaut wellness assistant with a React frontend canvas, a Gemini-powered chat endpoint, and optional local Piper text-to-speech.
 
 ## Requirements
 
@@ -8,7 +8,7 @@ Ainy is an astronaut wellness assistant with a React interface, a Gemini-powered
 - Node.js 20.19+ or 22.12+
 - A Gemini API key for AI responses
 
-Local Piper TTS is optional and disabled by default, so it does not use memory when it is not needed. The chat and speech output are in English.
+Local Piper TTS is optional and disabled by default, so it does not use memory when it is not needed. `GEMINI_SYSTEM_INSTRUCTION` is blank by default; set it in `.env` to configure the chat prompt later.
 
 ## Setup
 
@@ -51,7 +51,7 @@ npm run dev
 
 Open <http://127.0.0.1:5173>. Vite proxies `/api` requests to the Flask server on port 5000.
 
-The chat responds in English. The interface and application instructions are in English.
+The frontend currently renders only the black background and animated gradient wallpaper as a blank canvas for Figma. The Gemini chat and Piper TTS backend endpoints remain available for the next interface iteration.
 Gemini requests time out after 30 seconds, and generated responses are capped at 512 tokens.
 
 ## Knowledge libraries
@@ -72,6 +72,6 @@ python -m pip install -r requirements-tts.txt
 python -m piper.download_voices en_US-mike-medium --download-dir tts\models
 ```
 
-Set `ENABLE_LOCAL_TTS=true` in `.env` and restart the backend. The model path defaults to `tts/models/en_US-mike-medium.onnx`; set `PIPER_MODEL_PATH` to override it. The model is stored locally and is not included in Git. TTS requests are processed one at a time to limit resource usage. The `/api/status` endpoint reports whether TTS is enabled and whether its model has loaded. New assistant responses are spoken automatically; if the browser blocks autoplay, use the audio controls shown with the response.
+Set `ENABLE_LOCAL_TTS=true` in `.env` and restart the backend. The model path defaults to `tts/models/en_US-mike-medium.onnx`; set `PIPER_MODEL_PATH` to override it. The model is stored locally and is not included in Git. TTS requests are processed one at a time to limit resource usage. The `/api/status` endpoint reports whether TTS is enabled and whether its model has loaded. The current blank frontend does not show chat or audio controls.
 
 The Piper engine is GPL-3.0-or-later. The `en_US-mike-medium` voice is listed as CC0. Review the licenses before redistributing the engine or voice.

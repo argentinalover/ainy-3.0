@@ -22,6 +22,7 @@ MAX_CHAT_OUTPUT_TOKENS = 512
 MAX_TTS_TEXT_LENGTH = 8000
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3-flash-preview")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GEMINI_SYSTEM_INSTRUCTION = os.environ.get("GEMINI_SYSTEM_INSTRUCTION", "").strip()
 GEMINI_CLIENT = (
     genai.Client(
         api_key=GEMINI_API_KEY,
@@ -115,18 +116,12 @@ def chat():
             )
         )
 
-    system_instruction = (
-        "You are Ainy, a concise astronaut wellness assistant. "
-        "Always reply in English using brief, clear answers. "
-        "Avoid harmful guidance and don't disclose sensitive personal information."
-    )
-
     try:
         response = GEMINI_CLIENT.models.generate_content(
             model=GEMINI_MODEL,
             contents=message,
             config=GenerateContentConfig(
-                system_instruction=system_instruction,
+                system_instruction=GEMINI_SYSTEM_INSTRUCTION or None,
                 temperature=0.4,
                 max_output_tokens=MAX_CHAT_OUTPUT_TOKENS,
             ),

@@ -29,7 +29,7 @@ class TextToSpeechTests(unittest.TestCase):
         self.assertEqual(response.data, b"wav-data")
 
 
-class ChatLanguageTests(unittest.TestCase):
+class ChatPromptTests(unittest.TestCase):
     def setUp(self):
         self.client = app.app.test_client()
 
@@ -41,14 +41,26 @@ class ChatLanguageTests(unittest.TestCase):
         self.assertIn("The backend is running in basic mode", response.json["response"])
 
     @patch.object(app, "GEMINI_CLIENT")
-    def test_gemini_is_instructed_to_reply_in_english(self, gemini_client):
+    @patch.object(app, "GEMINI_SYSTEM_INSTRUCTION", "")
+    def test_gemini_has_no_system_instruction_by_default(self, gemini_client):
         gemini_client.models.generate_content.return_value.text = "Hello."
 
         response = self.client.post("/api/chat", json={"message": "Hello"})
 
         self.assertEqual(response.status_code, 200)
         config = gemini_client.models.generate_content.call_args.kwargs["config"]
-        self.assertIn("Always reply in English", config.system_instruction)
+        self.assertIsNone(config.system_instruction)
+
+    @patch.object(app, "GEMINI_CLIENT")
+    @patch.object(app, "GEMINI_SYSTEM_INSTRUCTION", "Custom future prompt")
+    def test_gemini_uses_configured_system_instruction(self, gemini_client):
+        gemini_client.models.generate_content.return_value.text = "Hello."
+
+        response = self.client.post("/api/chat", json={"message": "Hello"})
+
+        self.assertEqual(response.status_code, 200)
+        config = gemini_client.models.generate_content.call_args.kwargs["config"]
+        self.assertEqual(config.system_instruction, "Custom future prompt")
 
 
 if __name__ == "__main__":
