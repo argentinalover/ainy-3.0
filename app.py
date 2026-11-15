@@ -23,6 +23,14 @@ MAX_TTS_TEXT_LENGTH = 8000
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3-flash-preview")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GEMINI_SYSTEM_INSTRUCTION = os.environ.get("GEMINI_SYSTEM_INSTRUCTION", "").strip()
+CORS_ALLOWED_ORIGINS = {
+    origin.strip().rstrip("/")
+    for origin in os.environ.get(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+}
 GEMINI_CLIENT = (
     genai.Client(
         api_key=GEMINI_API_KEY,
@@ -48,6 +56,18 @@ class TTSUnavailableError(Exception):
 
 if not GEMINI_API_KEY:
     app.logger.warning("GEMINI_API_KEY is empty. Add it to .env and restart the server.")
+
+
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get("Origin", "").rstrip("/")
+    if origin in CORS_ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Max-Age"] = "600"
+        response.vary.add("Origin")
+    return response
 
 
 @app.get("/")

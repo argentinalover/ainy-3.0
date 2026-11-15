@@ -17,6 +17,9 @@ import "./styles.css";
 const PRIMARY_METRICS = ["radiation", "cortisol", "sleep", "heartRate"];
 const SECONDARY_METRICS = ["microgravity", "muscleLoss"];
 const OrbitPreview = lazy(() => import("./OrbitPreview.jsx"));
+const API_BASE_URL = import.meta.env.PROD
+  ? (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "")
+  : "";
 const METRIC_STATUS_LABELS = {
   stable: "NOMINAL",
   observation: "OBSERVATION",
@@ -186,7 +189,7 @@ function App() {
     setIsSending(true);
 
     try {
-      const chatResponse = await fetch("/api/chat", {
+      const chatResponse = await fetch(`${API_BASE_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: submittedMessage }),
@@ -205,7 +208,7 @@ function App() {
       setLastResponse(responseText);
       setMessage("");
 
-      const ttsResponse = await fetch("/api/tts", {
+      const ttsResponse = await fetch(`${API_BASE_URL}/api/tts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: responseText }),

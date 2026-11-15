@@ -54,7 +54,43 @@ Open <http://127.0.0.1:5173>. Vite proxies `/api` requests to the Flask server o
 The frontend follows the current Figma canvas over the animated gradient wallpaper. The home page uses the supplied eyes on a dark rounded panel, with a TTS-reactive line connecting them, centered subtitles shown only during speech, and a working chat bar. Space Apps and LEO marks sit unobtrusively in the upper corners. Clicking the face transitions to `/page`, where it moves to the right of a more opaque console panel. The console displays simulated radiation, cortisol, sleep, and heart-rate readings; a small card below LEO alternates between microgravity and muscle-loss readings. The lower portion of LEO's console panel contains an expandable orbital preview, using the local Earth model with a moving craft, orbit track, and starfield.
 
 The gradient can preview simulated biometric alerts without adding controls to the interface: press `1` for radiation, `2` for cortisol, `3` for sleep, or `4` for heart rate. Press the same key again or `Escape` to clear the alert. These are demo values, not live sensor readings or medical guidance.
-Gemini requests time out after 30 seconds, and generated responses are capped at 512 tokens.
+Gemini requests time out after 30 seconds, and generated responses are capped at 400 tokens.
+
+## Share the local app with Cloudflare Tunnel
+
+The Flask server serves both the built React frontend and the API on port `5000`. Cloudflare Quick Tunnel provides a temporary public URL; the computer and both processes must stay running.
+
+1. Build the frontend:
+
+   ```powershell
+   cd frontend
+   npm run build
+   ```
+
+2. From the repository root, start the backend with `python app.py`. Open <http://localhost:5000> to verify the app locally.
+3. Install Cloudflare Tunnel once on Windows:
+
+   ```powershell
+   winget install --id Cloudflare.cloudflared
+   ```
+
+4. In another terminal, start a temporary tunnel:
+
+   ```powershell
+   cloudflared tunnel --url http://127.0.0.1:5000
+   ```
+
+5. Share the `https://…trycloudflare.com` URL printed by the command. The URL changes when the tunnel restarts.
+
+The tunnel makes the app and its Gemini endpoint public without authentication. Anyone with the URL could use the chat and consume your Gemini quota. Set usage limits, and stop the tunnel when you are done showing the app.
+
+## Move the frontend to Vercel later
+
+In Vercel, import the repository, set the project root to `frontend`, choose Vite, and set `VITE_API_BASE_URL` to a public backend URL. The backend can remain on this computer behind a Cloudflare Tunnel, or move to Cloud Run using the root `Dockerfile`. Set `CORS_ALLOWED_ORIGINS` on the backend to the exact Vercel site origin, such as `https://ainy-demo.vercel.app`; the `vercel.json` rewrite keeps `/page` working on refresh.
+
+If the backend remains on this computer, the computer and tunnel must stay running. Use a named Cloudflare Tunnel for a stable URL; a Quick Tunnel URL changes on restart, so Vercel's `VITE_API_BASE_URL` and the backend's allowed origin would need to be updated and redeployed.
+
+The Docker image enables Piper and downloads the existing English `en_US-mike-medium` voice; it may pronounce Spanish with an accent. The local `.env` and downloaded voice models are excluded from the Docker build context. Never put `GEMINI_API_KEY` in a `VITE_` variable or commit it to the repository.
 
 ## Knowledge libraries
 

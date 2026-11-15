@@ -15,6 +15,43 @@ class FrontendRouteTests(unittest.TestCase):
             response.close()
 
 
+class CorsTests(unittest.TestCase):
+    def setUp(self):
+        self.client = app.app.test_client()
+
+    @patch.object(app, "CORS_ALLOWED_ORIGINS", {"https://ainy-demo.vercel.app"})
+    def test_allowed_origin_can_preflight_api_requests(self):
+        response = self.client.options(
+            "/api/chat",
+            headers={
+                "Origin": "https://ainy-demo.vercel.app",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.headers["Access-Control-Allow-Origin"],
+            "https://ainy-demo.vercel.app",
+        )
+        self.assertIn("POST", response.headers["Access-Control-Allow-Methods"])
+        self.assertEqual(response.headers["Access-Control-Allow-Headers"], "Content-Type")
+        self.assertIn("Origin", response.vary)
+
+    @patch.object(app, "CORS_ALLOWED_ORIGINS", {"https://ainy-demo.vercel.app"})
+    def test_disallowed_origin_receives_no_cors_access(self):
+        response = self.client.options(
+            "/api/chat",
+            headers={
+                "Origin": "https://untrusted.example",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+
+        self.assertNotIn("Access-Control-Allow-Origin", response.headers)
+
+
 class TextToSpeechTests(unittest.TestCase):
     def setUp(self):
         self.client = app.app.test_client()
