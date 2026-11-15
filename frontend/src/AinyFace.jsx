@@ -8,7 +8,7 @@ function getAudioGraph(audioElement) {
   const audioContext = new window.AudioContext();
   const analyser = audioContext.createAnalyser();
   analyser.fftSize = 512;
-  analyser.smoothingTimeConstant = 0.75;
+  analyser.smoothingTimeConstant = 0.6;
 
   const source = audioContext.createMediaElementSource(audioElement);
   source.connect(analyser);
@@ -76,7 +76,7 @@ export default function AinyFace({ audioRef, isSpeaking }) {
       }
 
       const centerY = height / 2;
-      const maxAmplitude = isSpeaking ? height * 0.52 : 0;
+      const maxAmplitude = isSpeaking ? height * 0.82 : 0;
       const lastSample = samples.length - 1;
       context.beginPath();
       context.strokeStyle = isSpeaking

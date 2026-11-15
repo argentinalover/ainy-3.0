@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import AinyFace from "./AinyFace.jsx";
 import eyesImage from "../Images/eyes(waves).png";
 import leoMascot from "../Images/LEO_official_mascot.png";
-import nasaLogo from "../Images/NASA-Logo-Large.png";
+import spaceAppsLogo from "../Images/space_apps.png";
 import {
   KEYBOARD_ALERTS,
   SIMULATED_ALERT_VALUES,
@@ -15,6 +15,7 @@ import "./styles.css";
 
 const PRIMARY_METRICS = ["radiation", "cortisol", "sleep", "heartRate"];
 const SECONDARY_METRICS = ["microgravity", "muscleLoss"];
+const OrbitPreview = lazy(() => import("./OrbitPreview.jsx"));
 const METRIC_STATUS_LABELS = {
   stable: "NOMINAL",
   observation: "OBSERVATION",
@@ -43,6 +44,7 @@ function App() {
   const [sensorValues, setSensorValues] = useState(() => simulateValues());
   const [stabilityResult, setStabilityResult] = useState(null);
   const [secondaryMetric, setSecondaryMetric] = useState("microgravity");
+  const [isOrbitExpanded, setIsOrbitExpanded] = useState(false);
   const audioRef = useRef(null);
   const audioUrlRef = useRef("");
 
@@ -60,6 +62,10 @@ function App() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!isConsolePage) setIsOrbitExpanded(false);
+  }, [isConsolePage]);
 
   useEffect(() => {
     if (!isConsolePage) return undefined;
@@ -240,7 +246,11 @@ function App() {
   return (
     <main className={`app${alertClass}`}>
       <div className="brand-marks" aria-label="Project logos">
-        <img className="brand-mark brand-mark--nasa" src={nasaLogo} alt="NASA" />
+        <img
+          className="brand-mark brand-mark--space-apps"
+          src={spaceAppsLogo}
+          alt="International Space Apps Challenge"
+        />
         <img
           className="brand-mark brand-mark--leo"
           src={leoMascot}
@@ -301,6 +311,21 @@ function App() {
             <img className="face-eye face-eye--right" src={eyesImage} alt="" />
           </div>
         </button>
+        {isConsolePage && (
+          <Suspense
+            fallback={
+              <div
+                className="orbit-preview orbit-preview--loading"
+                aria-hidden="true"
+              />
+            }
+          >
+            <OrbitPreview
+              isExpanded={isOrbitExpanded}
+              onToggle={() => setIsOrbitExpanded((expanded) => !expanded)}
+            />
+          </Suspense>
+        )}
         {isConsolePage && (
           <div className="face-footer">
             <section

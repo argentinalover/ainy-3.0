@@ -54,7 +54,7 @@ body,
 .brand-marks {
   position: fixed;
   z-index: 4;
-  top: clamp(14px, 2.4vh, 26px);
+  top: clamp(8px, 1.8vh, 18px);
   right: clamp(16px, 3.2vw, 46px);
   left: clamp(16px, 3.2vw, 46px);
   display: grid;
@@ -69,10 +69,14 @@ body,
   opacity: 0.82;
 }
 
-.brand-mark--nasa {
+.brand-mark--space-apps {
+  align-self: start;
   justify-self: start;
-  width: clamp(34px, 4vw, 54px);
-  height: clamp(30px, 5vh, 44px);
+  width: clamp(40px, 5.2vw, 68px);
+  height: clamp(40px, 5.2vw, 68px);
+  opacity: 0.92;
+  filter: drop-shadow(0 1px 5px rgba(0, 0, 0, 0.4));
+  mix-blend-mode: screen;
 }
 
 .brand-mark--leo {
@@ -156,6 +160,123 @@ body,
   height: 66%;
   border-radius: clamp(28px, 3vw, 44px);
   background: rgba(14, 14, 14, 0.68);
+}
+
+.orbit-preview {
+  position: absolute;
+  z-index: 3;
+  top: 47%;
+  left: 60.5%;
+  display: block;
+  overflow: hidden;
+  width: 34%;
+  height: 31%;
+  padding: 0;
+  border: 1px solid rgba(148, 204, 239, 0.32);
+  border-radius: clamp(16px, 2vw, 26px);
+  background: #030812;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  color: #eaf6ff;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    top 450ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    height 450ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+.orbit-preview--loading {
+  background: radial-gradient(ellipse at 50% 35%, #10223b 0%, #030812 78%);
+  pointer-events: none;
+}
+
+.orbit-preview:hover,
+.orbit-preview:focus-visible {
+  border-color: rgba(174, 226, 255, 0.68);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.42), 0 0 20px rgba(89, 177, 229, 0.12);
+}
+
+.orbit-preview--expanded {
+  top: 40%;
+  height: 38%;
+}
+
+.orbit-preview__scene {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.orbit-preview__earth-fallback {
+  opacity: 1;
+  transition: opacity 450ms ease;
+}
+
+.orbit-preview--earth-loaded .orbit-preview__earth-fallback {
+  opacity: 0;
+}
+
+.earth-model {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+}
+
+.earth-model canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.orbit-preview__label,
+.orbit-preview__caption,
+.orbit-preview__toggle {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.orbit-preview__label {
+  top: clamp(8px, 1vw, 12px);
+  left: clamp(9px, 1.1vw, 14px);
+  color: rgba(232, 245, 255, 0.86);
+  font-size: clamp(7px, 0.72vw, 10px);
+  letter-spacing: 0.14em;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.8);
+}
+
+.orbit-preview__toggle {
+  top: clamp(6px, 0.8vw, 10px);
+  right: clamp(7px, 0.9vw, 12px);
+  display: grid;
+  width: clamp(17px, 1.8vw, 23px);
+  height: clamp(17px, 1.8vw, 23px);
+  place-items: center;
+  border: 1px solid rgba(210, 235, 250, 0.28);
+  border-radius: 50%;
+  background: rgba(5, 15, 26, 0.5);
+  color: rgba(235, 248, 255, 0.9);
+  font-size: clamp(12px, 1.2vw, 16px);
+  line-height: 1;
+}
+
+.orbit-preview__caption {
+  right: clamp(9px, 1.1vw, 14px);
+  bottom: clamp(7px, 0.9vw, 11px);
+  color: rgba(205, 229, 246, 0.64);
+  font-size: clamp(6px, 0.62vw, 8px);
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.8);
+}
+
+.orbit-preview__craft {
+  filter: drop-shadow(0 0 6px rgba(112, 218, 255, 0.9));
 }
 
 .console-panel {
@@ -647,10 +768,12 @@ body,
   .app::after,
   .face-panel,
   .console-panel,
+  .orbit-preview,
   .message-bar,
   .ai-status-card__light,
   .metric-card,
-  .secondary-metric {
+  .secondary-metric,
+  .orbit-preview__earth-fallback {
     animation: none;
     transition: none;
   }
