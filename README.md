@@ -8,7 +8,7 @@ Ainy is an astronaut wellness assistant with a React frontend canvas, a Gemini-p
 - Node.js 20.19+ or 22.12+
 - A Gemini API key for AI responses
 
-Local Piper TTS is optional and disabled by default, so it does not use memory when it is not needed. `GEMINI_SYSTEM_INSTRUCTION` is blank by default; set it in `.env` to configure the chat prompt later.
+Local Piper TTS is optional and disabled by default, so it does not use memory when it is not needed. `.env.example` includes Ainy's Spanish wellness prompt for `GEMINI_SYSTEM_INSTRUCTION`. Replies are limited to 400 tokens, and a leading `[PAUSA: Xs]` marker delays speech playback without being spoken or shown in the subtitle.
 
 ## Setup
 

@@ -72,6 +72,7 @@ class ChatPromptTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         config = gemini_client.models.generate_content.call_args.kwargs["config"]
         self.assertEqual(config.system_instruction, "Custom future prompt")
+        self.assertEqual(config.max_output_tokens, 400)
 
 
 if __name__ == "__main__":

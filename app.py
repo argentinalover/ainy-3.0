@@ -18,7 +18,7 @@ app = Flask(
 )
 load_dotenv(os.path.join(app.root_path, ".env"))
 MAX_CHAT_INPUT_LENGTH = 2000
-MAX_CHAT_OUTPUT_TOKENS = 512
+MAX_CHAT_OUTPUT_TOKENS = 400
 MAX_TTS_TEXT_LENGTH = 8000
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3-flash-preview")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")

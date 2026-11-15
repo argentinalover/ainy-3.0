@@ -11,6 +11,7 @@ import {
 } from "../stability/stabilityEngine.js";
 import { simulateValues, setSimulationValue } from "../stability/simulation.js";
 import { VARIABLES } from "../stability/variables.js";
+import { parseSpeechResponse, waitForSpeechPause } from "./speechResponse.js";
 import "./styles.css";
 
 const PRIMARY_METRICS = ["radiation", "cortisol", "sleep", "heartRate"];
@@ -198,7 +199,9 @@ function App() {
         throw new Error("The backend returned an empty response.");
       }
 
-      const responseText = chatData.response.trim();
+      const { text: responseText, pauseMs } = parseSpeechResponse(
+        chatData.response,
+      );
       setLastResponse(responseText);
       setMessage("");
 
@@ -222,6 +225,7 @@ function App() {
       }
       audioUrlRef.current = URL.createObjectURL(audioBlob);
       audioRef.current.src = audioUrlRef.current;
+      await waitForSpeechPause(pauseMs);
       try {
         await audioRef.current.play();
       } catch {
