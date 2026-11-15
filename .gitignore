@@ -9,4 +9,5 @@ node_modules/
 frontend/dist/
 frontend/.vite/
 tts/audio/*.wav
+tts/models/
 .vscode/settings.json

@@ -66,6 +66,10 @@ export default function AinyFace({ audioElement, isSpeaking }) {
       }
 
       context.beginPath();
+      context.strokeStyle = isSpeaking
+        ? "rgba(255, 223, 177, 0.9)"
+        : "rgba(255, 255, 255, 0.28)";
+      context.lineWidth = 2;
       const barCount = Math.max(1, Math.floor(width / 7));
       const groupSize = Math.floor(samples.length / barCount);
 

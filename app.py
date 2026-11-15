@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_file, send_from_directory
 from google import genai
 from google.genai.errors import APIError
-from google.genai.types import GenerateContentConfig
+from google.genai.types import GenerateContentConfig, HttpOptions
 
 FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend", "dist")
 app = Flask(
@@ -18,12 +18,27 @@ app = Flask(
 )
 load_dotenv(os.path.join(app.root_path, ".env"))
 MAX_CHAT_INPUT_LENGTH = 2000
+MAX_CHAT_OUTPUT_TOKENS = 512
 MAX_TTS_TEXT_LENGTH = 8000
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3-flash-preview")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-GEMINI_CLIENT = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+GEMINI_CLIENT = (
+    genai.Client(
+        api_key=GEMINI_API_KEY,
+        http_options=HttpOptions(timeout=30_000),
+    )
+    if GEMINI_API_KEY
+    else None
+)
+ENABLE_LOCAL_TTS = os.environ.get("ENABLE_LOCAL_TTS", "").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 VOICE_ENGINE = None
 VOICE_ENGINE_LOCK = Lock()
+TTS_GENERATION_LOCK = Lock()
 
 
 class TTSUnavailableError(Exception):
@@ -32,12 +47,6 @@ class TTSUnavailableError(Exception):
 
 if not GEMINI_API_KEY:
     app.logger.warning("GEMINI_API_KEY is empty. Add it to .env and restart the server.")
-
-crew_biometrics = {
-    "heart_rate": 72,
-    "spo2": 99,
-    "radiation_msv": 0.14,
-}
 
 
 @app.get("/")
@@ -51,14 +60,18 @@ def api_status():
         provider="Gemini" if GEMINI_CLIENT else "basic",
         model=GEMINI_MODEL,
         configured=GEMINI_CLIENT is not None,
+        tts_enabled=ENABLE_LOCAL_TTS,
+        tts_loaded=VOICE_ENGINE is not None,
     )
 
 
 @app.get("/api/biometrics")
 def get_biometrics():
-    crew_biometrics["heart_rate"] = random.randint(68, 76)
-    crew_biometrics["radiation_msv"] = round(random.uniform(0.12, 0.18), 3)
-    return jsonify(crew_biometrics)
+    return jsonify(
+        heart_rate=random.randint(68, 76),
+        spo2=99,
+        radiation_msv=round(random.uniform(0.12, 0.18), 3),
+    )
 
 
 def get_voice_engine():
@@ -73,8 +86,8 @@ def get_voice_engine():
             except (ImportError, OSError, RuntimeError) as error:
                 app.logger.exception("TTS model initialization failed")
                 raise TTSUnavailableError(
-                    "TTS is not ready. Install the packages in requirements-tts.txt "
-                    "and check the model download."
+                    "Piper TTS is not ready. Install the packages in "
+                    "requirements-tts.txt and check the voice model download."
                 ) from error
 
     return VOICE_ENGINE
@@ -97,15 +110,15 @@ def chat():
     if GEMINI_CLIENT is None:
         return jsonify(
             response=(
-                "The API is running in basic mode. I received your message, but "
+                "The backend is running in basic mode. I received your message, but "
                 "GEMINI_API_KEY must be configured to enable AI responses."
             )
         )
 
     system_instruction = (
-        "You are an AI powered by Ainy group, a NASA team formed by two brothers from argentina"
-        "you only reply with short and concise answers to the user, you are not allowed to"
-        "do any harm to anyone, nor provide sensitive information"
+        "You are Ainy, a concise astronaut wellness assistant. "
+        "Always reply in English using brief, clear answers. "
+        "Avoid harmful guidance and don't disclose sensitive personal information."
     )
 
     try:
@@ -115,7 +128,7 @@ def chat():
             config=GenerateContentConfig(
                 system_instruction=system_instruction,
                 temperature=0.4,
-                max_output_tokens=4096,
+                max_output_tokens=MAX_CHAT_OUTPUT_TOKENS,
             ),
         )
     except (APIError, httpx.HTTPError, TimeoutError) as error:
@@ -142,14 +155,20 @@ def text_to_speech():
         return jsonify(
             error=f"Text for speech cannot exceed {MAX_TTS_TEXT_LENGTH} characters."
         ), 413
+    if not ENABLE_LOCAL_TTS:
+        return jsonify(
+            error="Local TTS is disabled. Set ENABLE_LOCAL_TTS=true to enable it."
+        ), 503
 
     try:
-        audio = get_voice_engine().generate_audio(text)
+        voice_engine = get_voice_engine()
+        with TTS_GENERATION_LOCK:
+            audio = voice_engine.generate_audio(text)
     except TTSUnavailableError as error:
         return jsonify(error=str(error)), 503
     except (OSError, RuntimeError) as error:
         app.logger.exception("TTS audio generation failed")
-        return jsonify(error="Qwen3-TTS could not generate the audio."), 502
+        return jsonify(error="Piper could not generate the audio."), 502
 
     return send_file(
         BytesIO(audio),
