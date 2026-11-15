@@ -4,6 +4,17 @@ from unittest.mock import patch
 import app
 
 
+class FrontendRouteTests(unittest.TestCase):
+    def test_figma_page_route_serves_frontend(self):
+        response = app.app.test_client().get("/page")
+
+        try:
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("text/html", response.content_type)
+        finally:
+            response.close()
+
+
 class TextToSpeechTests(unittest.TestCase):
     def setUp(self):
         self.client = app.app.test_client()

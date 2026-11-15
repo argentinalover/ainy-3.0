@@ -51,6 +51,7 @@ if not GEMINI_API_KEY:
 
 
 @app.get("/")
+@app.get("/page")
 def home():
     return send_from_directory(FRONTEND_DIST, "index.html")
 
