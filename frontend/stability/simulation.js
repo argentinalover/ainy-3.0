@@ -8,6 +8,8 @@ const simulatedValues = Object.fromEntries(
     variable.value
   ])
 );
+const manualAlertOverrides = new Set();
+const MEAN_REVERSION_RATE = 0.1;
 
 const fluctuations = {
   microgravity: 0.00000002,
@@ -18,17 +20,22 @@ const fluctuations = {
   cortisol: 0.15
 };
 
-// Genera pequeñas fluctuaciones alrededor de los valores iniciales.
+// Generates bounded fluctuations around each variable's reference value.
 export function simulateValues() {
   for (const key of Object.keys(simulatedValues)) {
+    if (manualAlertOverrides.has(key)) continue;
+
+    const variable = VARIABLES[key];
+    const currentValue = simulatedValues[key];
     const variation = fluctuations[key];
     const randomChange = (Math.random() - 0.5) * 2 * variation;
+    const meanReversion =
+      (variable.reference - currentValue) * MEAN_REVERSION_RATE;
 
-    simulatedValues[key] += randomChange;
-
-    if (key === "muscleLoss") {
-      simulatedValues[key] = Math.max(0, simulatedValues[key]);
-    }
+    simulatedValues[key] = Math.min(
+      variable.max,
+      Math.max(variable.min, currentValue + meanReversion + randomChange)
+    );
   }
 
   return { ...simulatedValues };
@@ -41,4 +48,11 @@ export function setSimulationValue(key, value) {
   }
 
   simulatedValues[key] = value;
+
+  const variable = VARIABLES[key];
+  if (value < variable.min || value > variable.max) {
+    manualAlertOverrides.add(key);
+  } else {
+    manualAlertOverrides.delete(key);
+  }
 }

@@ -147,6 +147,13 @@ body {
   text-align: center;
 }
 
+.speech-error {
+  margin-top: 8px;
+  color: #f08a82;
+  font-size: 12px;
+  text-align: center;
+}
+
 .chat-container {
   width: min(560px, calc(100% - 36px));
   height: 52px;

@@ -41,11 +41,40 @@ function App() {
     "I'm here. How can I help?",
   );
   const [isSending, setIsSending] = useState(false);
+  const [speechUrl, setSpeechUrl] = useState("");
+  const [audioElement, setAudioElement] = useState(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechError, setSpeechError] = useState("");
   const [stability, setStability] = useState({
     stabilityScore: 100,
     status: "stable",
   });
   const [activeIndicators, setActiveIndicators] = useState({});
+
+  useEffect(() => {
+    if (!speechUrl) return undefined;
+    return () => URL.revokeObjectURL(speechUrl);
+  }, [speechUrl]);
+
+  useEffect(() => {
+    if (!speechUrl || !audioElement) return undefined;
+
+    let active = true;
+    audioElement.play().catch((error) => {
+      if (!active) return;
+
+      setIsSpeaking(false);
+      setSpeechError(
+        error.name === "NotAllowedError"
+          ? "Allow audio playback in your browser to hear Ainy's voice."
+          : "Ainy generated speech, but the audio could not be played.",
+      );
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [audioElement, speechUrl]);
 
   useEffect(() => {
     const updateStability = () => {
@@ -117,6 +146,10 @@ function App() {
     const submittedMessage = message.trim();
     if (!submittedMessage || isSending) return;
 
+    audioElement?.pause();
+    setSpeechUrl("");
+    setIsSpeaking(false);
+    setSpeechError("");
     setIsSending(true);
     setAssistantMessage("Thinking...");
 
@@ -134,6 +167,32 @@ function App() {
 
       setAssistantMessage(data.response);
       setMessage("");
+
+      try {
+        const speechResponse = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: data.response }),
+        });
+
+        if (!speechResponse.ok) {
+          const speechData = await speechResponse.json();
+          throw new Error(speechData.error || "Could not generate the audio.");
+        }
+
+        const audioBlob = await speechResponse.blob();
+        if (!audioBlob.size) {
+          throw new Error("The voice service returned empty audio.");
+        }
+
+        setSpeechUrl(URL.createObjectURL(audioBlob));
+      } catch (error) {
+        setSpeechError(
+          error instanceof Error
+            ? error.message
+            : "Could not connect to the voice service.",
+        );
+      }
     } catch (error) {
       setAssistantMessage(
         error instanceof Error
@@ -148,11 +207,34 @@ function App() {
   return (
     <main className="app" style={gradientStyle}>
       <section className="main-content">
-        <AinyFace />
+        <AinyFace audioElement={audioElement} isSpeaking={isSpeaking} />
 
         <p className="assistant-message" aria-live="polite">
           {assistantMessage}
         </p>
+        {speechError && (
+          <p className="speech-error" role="alert">
+            {speechError}
+          </p>
+        )}
+        <audio
+          ref={setAudioElement}
+          src={speechUrl || undefined}
+          preload="auto"
+          hidden
+          aria-hidden="true"
+          onPlay={() => {
+            setIsSpeaking(true);
+            setSpeechError("");
+          }}
+          onPause={() => setIsSpeaking(false)}
+          onEnded={() => setIsSpeaking(false)}
+          onError={() => {
+            if (speechUrl) {
+              setSpeechError("Ainy generated speech, but the audio could not be played.");
+            }
+          }}
+        />
       </section>
 
       <form className="chat-container" onSubmit={handleSubmit}>
