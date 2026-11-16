@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "0.0.0.0",
       port: 5173,
+      allowedHosts: true, // <-- Agregá esta línea para permitir Ngrok
       proxy: {
         "/api": {
           target: apiTarget,
@@ -21,3 +22,4 @@ export default defineConfig(({ mode }) => {
     },
   };
 });
+;
