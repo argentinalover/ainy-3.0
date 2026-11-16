@@ -18,7 +18,7 @@ app = Flask(
 )
 load_dotenv(os.path.join(app.root_path, ".env"))
 MAX_CHAT_INPUT_LENGTH = 2000
-MAX_CHAT_OUTPUT_TOKENS = 400
+MAX_CHAT_OUTPUT_TOKENS = 800
 MAX_TTS_TEXT_LENGTH = 8000
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3-flash-preview")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -49,6 +49,16 @@ VOICE_ENGINE = None
 VOICE_ENGINE_LOCK = Lock()
 TTS_GENERATION_LOCK = Lock()
 
+# Rangos exactos sincronizados con frontend/src/stability/variables.js
+VARIABLE_THRESHOLDS = {
+    "radiation": {"name": "Radiation", "unit": "mSv/day", "min": 0.0, "max": 1.0, "default": 0.3},
+    "cortisol": {"name": "Cortisol", "unit": "ug/dL", "min": 5.0, "max": 25.0, "default": 12.0},
+    "sleep": {"name": "Sleep", "unit": "hours", "min": 7.0, "max": 9.0, "default": 7.5},
+    "heartRate": {"name": "Heart Rate", "unit": "bpm", "min": 60.0, "max": 100.0, "default": 72.0},
+    "microgravity": {"name": "Microgravity", "unit": "g", "min": 0.0, "max": 0.0001, "default": 0.000001},
+    "muscleLoss": {"name": "Muscle Loss", "unit": "%", "min": 0.0, "max": 5.0, "default": 0.0},
+}
+
 
 class TTSUnavailableError(Exception):
     pass
@@ -56,6 +66,34 @@ class TTSUnavailableError(Exception):
 
 if not GEMINI_API_KEY:
     app.logger.warning("GEMINI_API_KEY is empty. Add it to .env and restart the server.")
+
+
+def evaluate_frontend_telemetry(payload):
+    """Evalúa las variables recibidas del frontend sin diluir picos críticos en un promedio."""
+    raw_telemetry = payload.get("telemetry") if isinstance(payload.get("telemetry"), dict) else {}
+    stability_obj = payload.get("stability") if isinstance(payload.get("stability"), dict) else {}
+    stability_vars = stability_obj.get("variables") if isinstance(stability_obj.get("variables"), dict) else {}
+    active_alert = payload.get("activeAlert")
+
+    readings = {}
+    alerts = []
+
+    for key, spec in VARIABLE_THRESHOLDS.items():
+        val = raw_telemetry.get(key, spec["default"])
+        if not isinstance(val, (int, float)) or isinstance(val, bool):
+            val = spec["default"]
+
+        formatted_val = round(val, 6) if key == "microgravity" else round(val, 2)
+        readings[key] = f"{formatted_val} {spec['unit']}"
+
+        var_status = stability_vars.get(key, {}).get("status")
+        if val > spec["max"] or val < spec["min"] or var_status == "alert" or active_alert == key:
+            alerts.append(
+                f"{spec['name']} CRITICAL at {formatted_val} {spec['unit']} "
+                f"(nominal range {spec['min']} to {spec['max']} {spec['unit']})"
+            )
+
+    return readings, alerts, stability_obj.get("stabilityScore")
 
 
 @app.after_request
@@ -137,13 +175,38 @@ def chat():
             )
         )
 
+    readings, critical_alerts, stability_score = evaluate_frontend_telemetry(payload)
+
+    if critical_alerts:
+        alert_directive = (
+            f"CRITICAL OVERRIDE ALERT: {', '.join(critical_alerts)}. "
+            f"IGNORE any overall nominal score. DO NOT say the crew member or systems are nominal or stable. "
+            f"Immediately warn the user about the critical variable with its exact value and give one brief action."
+        )
+    else:
+        score_text = f"Overall stability score: {stability_score}%. " if stability_score is not None else ""
+        alert_directive = (
+            f"All monitored simulated variables are within nominal ranges. {score_text}"
+            f"Report exact sensor values clearly if asked."
+        )
+
+    telemetry_system_instruction = (
+        f"{GEMINI_SYSTEM_INSTRUCTION}\n\n"
+        f"VOICE TTS DIRECTIVE: You are speaking aloud via Text-to-Speech. Keep your answer ultra-concise "
+        f"(1 to 2 short sentences maximum) for fast speech synthesis. NEVER use emojis, asterisks, markdown, "
+        f"bullet points, or special symbols. Plain spoken text only. "
+        f"Treat these simulated mission sensors as live telemetry and NEVER claim you lack sensor access. "
+        f"{alert_directive} "
+        f"Exact screen telemetry: {readings}"
+    ).strip()
+
     try:
         response = GEMINI_CLIENT.models.generate_content(
             model=GEMINI_MODEL,
             contents=message,
             config=GenerateContentConfig(
-                system_instruction=GEMINI_SYSTEM_INSTRUCTION or None,
-                temperature=0.4,
+                system_instruction=telemetry_system_instruction,
+                temperature=0.25,
                 max_output_tokens=MAX_CHAT_OUTPUT_TOKENS,
             ),
         )
@@ -151,7 +214,7 @@ def chat():
         app.logger.error("Gemini request failed: %s", error)
         return jsonify(error="Gemini could not process the message. Please try again."), 502
 
-    response_text = (response.text or "").strip()
+    response_text = (response.text or "").replace("*", "").replace("#", "").strip()
     if not response_text:
         return jsonify(error="Gemini did not return a text response."), 502
 
